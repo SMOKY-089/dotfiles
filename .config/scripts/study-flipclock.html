@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Study Flip Clock • 100m</title>
+    <style>
+        :root {
+            --bg-color: #0F1010;
+            --card-bg: #1A1B1C;
+            --card-front: #202224;
+            --border-color: #887D75;
+            --accent-color: #91A5C1;
+            --text-color: #F0F2F5;
+            --text-dim: #7C8492;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'JetBrainsMono Nerd Font Propo', 'JetBrainsMono Nerd Font', monospace, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .header-title {
+            font-size: min(2vw, 16px);
+            font-weight: 700;
+            letter-spacing: 4px;
+            color: var(--accent-color);
+            text-transform: uppercase;
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .status-badge {
+            background: rgba(145, 165, 193, 0.15);
+            border: 1px solid var(--accent-color);
+            color: var(--accent-color);
+            padding: 2px 8px;
+            font-size: 11px;
+            letter-spacing: 1px;
+        }
+
+        .status-badge.paused {
+            border-color: #D4A373;
+            color: #D4A373;
+            background: rgba(212, 163, 115, 0.12);
+        }
+
+        /* Flip Clock Container */
+        .clock-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: min(2vw, 24px);
+            perspective: 1200px;
+            margin-bottom: 40px;
+        }
+
+        .flip-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .flip-pair {
+            display: flex;
+            gap: min(0.8vw, 10px);
+        }
+
+        .group-label {
+            font-size: min(1.4vw, 13px);
+            color: var(--text-dim);
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        /* 3D Flip Card Unit */
+        .flip-card {
+            position: relative;
+            width: min(12vw, 130px);
+            height: min(18vw, 190px);
+            font-size: min(13vw, 140px);
+            font-weight: 800;
+            line-height: min(18vw, 190px);
+            text-align: center;
+            border-radius: 4px;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.7);
+        }
+
+        .flip-card .card-face {
+            position: absolute;
+            left: 0;
+            width: 100%;
+            height: 50%;
+            overflow: hidden;
+            background: var(--card-bg);
+            color: var(--text-color);
+            border-left: 1px solid rgba(136, 125, 117, 0.3);
+            border-right: 1px solid rgba(136, 125, 117, 0.3);
+        }
+
+        .card-top {
+            top: 0;
+            border-top: 1px solid rgba(136, 125, 117, 0.4);
+            border-top-left-radius: 4px;
+            border-top-right-radius: 4px;
+            line-height: min(18vw, 190px);
+            transform-origin: bottom;
+        }
+
+        .card-bottom {
+            bottom: 0;
+            border-bottom: 1px solid rgba(136, 125, 117, 0.25);
+            border-bottom-left-radius: 4px;
+            border-bottom-right-radius: 4px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            transform-origin: top;
+        }
+
+        .card-bottom span {
+            transform: translateY(50%);
+        }
+
+        /* Horizontal Split line */
+        .flip-card::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: #000000;
+            z-index: 10;
+            transform: translateY(-50%);
+            box-shadow: 0 1px 2px rgba(255, 255, 255, 0.05);
+        }
+
+        /* Separator Colons */
+        .separator {
+            font-size: min(8vw, 90px);
+            font-weight: 700;
+            color: var(--border-color);
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin-top: -24px;
+        }
+
+        /* Presets & Controls */
+        .controls-toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+            justify-content: center;
+            max-width: 90%;
+        }
+
+        .btn {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            color: var(--accent-color);
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 600;
+            padding: 8px 16px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .btn:hover {
+            background: #2D2F31;
+            color: #FFFFFF;
+            border-color: var(--accent-color);
+        }
+
+        .btn.active {
+            background: var(--accent-color);
+            color: var(--bg-color);
+            font-weight: 700;
+        }
+
+        .btn-action {
+            border-color: var(--accent-color);
+            background: #15181C;
+        }
+
+        .shortcuts-hint {
+            margin-top: 24px;
+            font-size: 11px;
+            color: var(--text-dim);
+            letter-spacing: 1px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header-title">
+        <span id="title-text">Study Session</span>
+        <span id="status-badge" class="status-badge">RUNNING</span>
+    </div>
+
+    <div class="clock-container">
+        <!-- Hours -->
+        <div class="flip-group" id="hours-group">
+            <div class="flip-pair">
+                <div class="flip-card" id="h1"><div class="card-face card-top">0</div><div class="card-face card-bottom"><span>0</span></div></div>
+                <div class="flip-card" id="h2"><div class="card-face card-top">1</div><div class="card-face card-bottom"><span>1</span></div></div>
+            </div>
+            <div class="group-label">Hours</div>
+        </div>
+
+        <div class="separator">:</div>
+
+        <!-- Minutes -->
+        <div class="flip-group">
+            <div class="flip-pair">
+                <div class="flip-card" id="m1"><div class="card-face card-top">4</div><div class="card-face card-bottom"><span>4</span></div></div>
+                <div class="flip-card" id="m2"><div class="card-face card-top">0</div><div class="card-face card-bottom"><span>0</span></div></div>
+            </div>
+            <div class="group-label">Minutes</div>
+        </div>
+
+        <div class="separator">:</div>
+
+        <!-- Seconds -->
+        <div class="flip-group">
+            <div class="flip-pair">
+                <div class="flip-card" id="s1"><div class="card-face card-top">0</div><div class="card-face card-bottom"><span>0</span></div></div>
+                <div class="flip-card" id="s2"><div class="card-face card-top">0</div><div class="card-face card-bottom"><span>0</span></div></div>
+            </div>
+            <div class="group-label">Seconds</div>
+        </div>
+    </div>
+
+    <!-- Presets & Action Buttons -->
+    <div class="controls-toolbar">
+        <button class="btn btn-action" id="toggle-btn" onclick="toggleTimer()">Pause [Space]</button>
+        <button class="btn btn-action" onclick="resetTimer()">Reset [r]</button>
+        <button class="btn btn-action" onclick="toggleFullscreen()">Fullscreen [f]</button>
+        <span style="color: var(--border-color); margin: 0 4px;">|</span>
+        <button class="btn" onclick="setPreset(25)">25m</button>
+        <button class="btn" onclick="setPreset(45)">45m</button>
+        <button class="btn" onclick="setPreset(60)">60m</button>
+        <button class="btn" onclick="setPreset(90)">90m</button>
+        <button class="btn active" id="btn-100" onclick="setPreset(100)">100m</button>
+        <button class="btn" onclick="setPreset(120)">120m</button>
+        <button class="btn" onclick="customPrompt()">Custom</button>
+    </div>
+
+    <div class="shortcuts-hint">
+        [Space] Play/Pause • [r] Reset • [f] Fullscreen • [↑/↓] ±5m
+    </div>
+
+    <script>
+        let totalSeconds = 100 * 60;
+        let remainingSeconds = totalSeconds;
+        let isRunning = true;
+        let timerInterval = null;
+
+        const h1 = document.getElementById('h1');
+        const h2 = document.getElementById('h2');
+        const m1 = document.getElementById('m1');
+        const m2 = document.getElementById('m2');
+        const s1 = document.getElementById('s1');
+        const s2 = document.getElementById('s2');
+
+        const toggleBtn = document.getElementById('toggle-btn');
+        const statusBadge = document.getElementById('status-badge');
+
+        function setCardValue(card, val) {
+            const top = card.querySelector('.card-top');
+            const bottom = card.querySelector('.card-bottom span');
+            if (top.textContent !== val) {
+                top.textContent = val;
+                bottom.textContent = val;
+            }
+        }
+
+        function updateDisplay() {
+            const h = Math.floor(remainingSeconds / 3600);
+            const m = Math.floor((remainingSeconds % 3600) / 60);
+            const s = remainingSeconds % 60;
+
+            const hStr = String(h).padStart(2, '0');
+            const mStr = String(m).padStart(2, '0');
+            const sStr = String(s).padStart(2, '0');
+
+            setCardValue(h1, hStr[0]);
+            setCardValue(h2, hStr[1]);
+            setCardValue(m1, mStr[0]);
+            setCardValue(m2, mStr[1]);
+            setCardValue(s1, sStr[0]);
+            setCardValue(s2, sStr[1]);
+
+            document.title = `${hStr}:${mStr}:${sStr} • Study Flip Clock`;
+        }
+
+        function playChime() {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const now = ctx.currentTime;
+                // Elegant two-tone bell chime
+                const osc1 = ctx.createOscillator();
+                const gain1 = ctx.createGain();
+                osc1.frequency.setValueAtTime(523.25, now); // C5
+                osc1.frequency.exponentialRampToValueAtTime(659.25, now + 0.3); // E5
+                gain1.gain.setValueAtTime(0.3, now);
+                gain1.gain.exponentialRampToValueAtTime(0.001, now + 1.8);
+                osc1.connect(gain1);
+                gain1.connect(ctx.destination);
+                osc1.start(now);
+                osc1.stop(now + 1.8);
+            } catch(e) {}
+        }
+
+        function toggleTimer() {
+            isRunning = !isRunning;
+            toggleBtn.textContent = isRunning ? "Pause [Space]" : "Resume [Space]";
+            statusBadge.textContent = isRunning ? "RUNNING" : "PAUSED";
+            statusBadge.classList.toggle('paused', !isRunning);
+        }
+
+        function resetTimer() {
+            remainingSeconds = totalSeconds;
+            updateDisplay();
+        }
+
+        function setPreset(mins) {
+            totalSeconds = mins * 60;
+            remainingSeconds = totalSeconds;
+            document.querySelectorAll('.controls-toolbar .btn').forEach(b => b.classList.remove('active'));
+            const el = document.getElementById(`btn-${mins}`);
+            if (el) el.classList.add('active');
+            updateDisplay();
+        }
+
+        function customPrompt() {
+            const input = prompt("Enter study duration in minutes:", "100");
+            const val = parseInt(input);
+            if (!isNaN(val) && val > 0) {
+                setPreset(val);
+            }
+        }
+
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if (e.key === ' ') {
+                e.preventDefault();
+                toggleTimer();
+            } else if (e.key === 'r' || e.key === 'R') {
+                resetTimer();
+            } else if (e.key === 'f' || e.key === 'F') {
+                toggleFullscreen();
+            } else if (e.key === 'ArrowUp') {
+                remainingSeconds += 300;
+                updateDisplay();
+            } else if (e.key === 'ArrowDown') {
+                remainingSeconds = Math.max(0, remainingSeconds - 300);
+                updateDisplay();
+            }
+        });
+
+        // Main Timer Loop
+        timerInterval = setInterval(() => {
+            if (isRunning && remainingSeconds > 0) {
+                remainingSeconds--;
+                updateDisplay();
+                if (remainingSeconds === 0) {
+                    playChime();
+                    statusBadge.textContent = "COMPLETED";
+                    statusBadge.classList.add('paused');
+                    isRunning = false;
+                    toggleBtn.textContent = "Start";
+                }
+            }
+        }, 1000);
+
+        updateDisplay();
+    </script>
+</body>
+</html>
