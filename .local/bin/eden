@@ -1,0 +1,2 @@
+#!/usr/bin/env bash
+exec /home/katana/Projects/eden-engine/.venv/bin/python /home/katana/Projects/eden-engine/eden_tool.py "$@"

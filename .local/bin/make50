@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+# CS50 Compilation Helper (Local Offline Workstation)
+# Emulates the Harvard CS50 IDE build environment using Clang
+
+set -e
+
+if [ $# -lt 1 ]; then
+    echo "Usage: make50 <source_file_or_target> [additional compiler flags]"
+    echo "Example: make50 hello"
+    echo "         make50 mario.c"
+    exit 1
+fi
+
+RAW_TARGET="$1"
+shift
+
+# Strip .c extension if provided
+TARGET="${RAW_TARGET%.c}"
+SOURCE="${TARGET}.c"
+
+if [ ! -f "$SOURCE" ]; then
+    echo "Error: Source file '$SOURCE' not found."
+    exit 1
+fi
+
+LOCAL_INC="$HOME/.local/include"
+LOCAL_LIB="$HOME/.local/lib"
+
+# Harvard CS50 Standard Flags
+CFLAGS=(
+    -ggdb3
+    -O0
+    -std=c11
+    -Wall
+    -Werror
+    -Wextra
+    -Wno-sign-compare
+    -Wno-unused-parameter
+    -Wno-unused-variable
+    -Wshadow
+    -fsanitize=signed-integer-overflow
+    -fsanitize=undefined
+    -I"$LOCAL_INC"
+)
+
+LDFLAGS=(
+    -L"$LOCAL_LIB"
+    -Wl,-rpath,"$LOCAL_LIB"
+    -lcs50
+    -lm
+)
+
+echo "clang ${CFLAGS[*]} $SOURCE ${LDFLAGS[*]} $@ -o $TARGET"
+clang "${CFLAGS[@]}" "$SOURCE" "${LDFLAGS[@]}" "$@" -o "$TARGET"
+echo "✓ Successfully compiled $SOURCE -> $TARGET"

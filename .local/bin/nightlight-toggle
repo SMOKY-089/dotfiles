@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# Night Light toggle script for Niri using wlsunset
+
+if pgrep -x "wlsunset" > /dev/null; then
+    pkill -x "wlsunset"
+    notify-send -u low -i preferences-desktop-display "Night Light" "Night Light disabled" 2>/dev/null || true
+else
+    # Current time: if between 19:00 and 07:00, or toggle immediately to warm
+    wlsunset -t 4200 -T 6500 -S 07:00 -s 19:00 >/dev/null 2>&1 &
+    notify-send -u low -i preferences-desktop-display "Night Light" "Night Light enabled (4200K)" 2>/dev/null || true
+fi

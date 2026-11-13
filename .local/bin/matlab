@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+export QT_QPA_PLATFORM=xcb
+export _JAVA_AWT_WM_NONREPARENTING=1
+export LD_LIBRARY_PATH="/usr/local/MATLAB/R2026a/compat-libs${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+exec /usr/local/MATLAB/R2026a/bin/matlab "$@"

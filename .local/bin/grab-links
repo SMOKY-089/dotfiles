@@ -1,0 +1,108 @@
+#!/usr/bin/env python3
+"""
+grab-links - Automated Filehost Link Scraper & Batch Extractor for DDL Piracy
+Grabs all filehost links (DataNodes, FuckingFast, QiWi, Gofile, MultiUp, Pixeldrain, 1fichier, MegaUp, MediaFire, etc.)
+from your clipboard or a file, deduplicates them, sorts them by part number, and copies the batch list to your Wayland clipboard!
+"""
+import subprocess
+import sys
+import re
+from urllib.parse import urlparse
+
+def get_clipboard():
+    try:
+        res = subprocess.run(["wl-paste", "--no-newline"], capture_output=True, text=True, check=True)
+        return res.stdout
+    except Exception as e:
+        print("❌ Error reading clipboard:", e, file=sys.stderr)
+        sys.exit(1)
+
+def set_clipboard(text):
+    try:
+        process = subprocess.Popen(["wl-copy"], stdin=subprocess.PIPE, text=True)
+        process.communicate(input=text)
+    except Exception as e:
+        print("❌ Error setting clipboard:", e, file=sys.stderr)
+        sys.exit(1)
+
+def extract_links(text):
+    # Comprehensive regex for URLs
+    url_pattern = re.compile(r'https?://[^\s<>"\'()]+')
+    raw_urls = url_pattern.findall(text)
+    
+    # Target filehost domains commonly used by FitGirl, DODI, SteamRIP, ElAmigos
+    filehosts = [
+        'datanodes', 'fuckingfast', 'qiwi', 'gofile', 'multiup', 'pixeldrain',
+        '1fichier', 'megaup', 'mediafire', 'rapidgator', 'ddownload', 'krakenfiles',
+        'buzzheavier', 'send.cm', 'turbobit', 'katfile', 'userupload', 'workupload',
+        'rootz', 'vimm', 'archive.org', 'paste.fitgirl-repacks.site', 'rentry'
+    ]
+    
+    matched_urls = set()
+    for u in raw_urls:
+        # Clean trailing punctuation often caught in scraping
+        u = u.rstrip('.,;:?!"\'')
+        domain = urlparse(u).netloc.lower()
+        if any(fh in domain for fh in filehosts):
+            matched_urls.add(u)
+            
+    # Sort logically so part01, part02, part03 appear in sequential order
+    def sort_key(url):
+        # Extract part numbers if present for natural sorting
+        match = re.search(r'(?:part|pt|p)[\._-]?(\d+)', url, re.IGNORECASE)
+        if match:
+            return (0, int(match.group(1)), url)
+        # Check for numbers before .rar/.bin/.7z/.zip
+        match_ext = re.search(r'(\d+)\.(?:rar|bin|7z|zip|z\d+)$', url, re.IGNORECASE)
+        if match_ext:
+            return (0, int(match_ext.group(1)), url)
+        return (1, 0, url)
+        
+    return sorted(list(matched_urls), key=sort_key)
+
+if __name__ == "__main__":
+    raw_text = ""
+    if len(sys.argv) > 1:
+        # Read from file or URL argument
+        arg = sys.argv[1]
+        if arg.startswith("http://") or arg.startswith("https://"):
+            try:
+                import urllib.request
+                req = urllib.request.Request(arg, headers={'User-Agent': 'Mozilla/5.0'})
+                with urllib.request.urlopen(req) as response:
+                    raw_text = response.read().decode('utf-8', errors='ignore')
+            except Exception as e:
+                print(f"❌ Error fetching URL {arg}:", e, file=sys.stderr)
+                sys.exit(1)
+        else:
+            try:
+                with open(arg, 'r', encoding='utf-8', errors='ignore') as f:
+                    raw_text = f.read()
+            except Exception as e:
+                print(f"❌ Error reading file {arg}:", e, file=sys.stderr)
+                sys.exit(1)
+    else:
+        raw_text = get_clipboard()
+        
+    if not raw_text.strip():
+        print("⚠️ No text found in clipboard or argument!")
+        sys.exit(0)
+        
+    links = extract_links(raw_text)
+    if not links:
+        print("⚠️ No filehost links found in the copied text!")
+        print("💡 Pro tip: Press Ctrl+A on the FitGirl/DODI pastebin or mirror page, press Ctrl+C, then run grab-links!")
+        sys.exit(0)
+        
+    batch_output = '\n'.join(links) + '\n'
+    set_clipboard(batch_output)
+    
+    print(f"✔ Successfully scraped, deduplicated, and sorted {len(links)} filehost links!")
+    print("📋 The clean batch list has been copied to your clipboard!")
+    print("--- First 5 links preview ---")
+    for l in links[:5]:
+        print(f"  ➜ {l}")
+    if len(links) > 5:
+        print(f"  ... and {len(links) - 5} more.")
+    print("-----------------------------")
+    print("🚀 Just open AB Download Manager (or Motrix/JDownloader) -> Batch Add -> Ctrl+V!")

@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# clip - Copy standard input or file directly to Wayland clipboard without mouse-dragging
+if [ $# -eq 0 ]; then
+    wl-copy
+else
+    cat "$@" | wl-copy
+fi
